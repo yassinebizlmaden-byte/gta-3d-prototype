@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>San Andreas 3D - Complete 20 Features Edition</title>
+  <title>San Andreas 3D - Multiplayer Edition</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { overflow: hidden; background: #0a0e17; font-family: system-ui, -apple-system, sans-serif; }
@@ -43,6 +43,45 @@
     #stamina-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #eab308, #38bdf8); transition: width 0.08s linear; }
     #wanted-stars { color: #fbbf24; font-size: 13px; letter-spacing: 2px; font-weight: 900; margin-top: 2px; }
     #bags-counter { color: #fde047; font-size: 11px; font-weight: 700; margin-top: 3px; }
+
+    #mp-box {
+      position: fixed;
+      top: 14px;
+      right: 320px;
+      background: rgba(10, 14, 23, 0.88);
+      color: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      backdrop-filter: blur(8px);
+      font-size: 11.5px;
+      z-index: 15;
+      width: 225px;
+    }
+    #mp-box b { color: #c084fc; }
+    .mp-row { display: flex; gap: 6px; margin-top: 6px; }
+    #room-input {
+      flex: 1;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 7px;
+      padding: 5px 8px;
+      font-size: 11.5px;
+      outline: none;
+    }
+    #btn-mp-connect {
+      background: #7e22ce;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    #btn-mp-connect:hover { background: #9333ea; }
+    #mp-status { margin-top: 6px; font-size: 10.5px; color: #cbd5e1; }
 
     #mission-box {
       position: fixed;
@@ -272,6 +311,7 @@
     }
     #busted-respawn-btn:hover { background: #b91c1c; }
   </style>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
   <div id="hud">
@@ -291,6 +331,15 @@
     <div class="vital-track"><div id="stamina-bar"></div></div>
     <div id="wanted-stars">WANTED : ☆ ☆ ☆</div>
     <div id="bags-counter">CASH BAGS : 0 / 10</div>
+  </div>
+
+  <div id="mp-box">
+    <div><b>ONLINE ROOM (P2P)</b></div>
+    <div class="mp-row">
+      <input id="room-input" type="text" placeholder="smiyt room (ex: sa3d-1)" value="sa3d-room1" />
+      <button id="btn-mp-connect">JOIN</button>
+    </div>
+    <div id="mp-status">Offline — ktb smiyt room o wrek JOIN</div>
   </div>
 
   <div id="mission-box">
@@ -364,7 +413,7 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    // 0. Web Audio API Synthesizer (Bla fichiers externes)
+    // 0. Web Audio API Synthesizer
     let audioCtx = null;
     let soundEnabled = true;
 
@@ -526,7 +575,7 @@
       return (dx * dx + dz * dz) < (radius * radius);
     }
 
-    // 4. Textures Procédurales Waqi3iya
+    // 4. Textures Procédurales
     function createAsphaltTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
@@ -659,7 +708,7 @@
       return tex;
     }
 
-    // 5. Arḍiya Waqi3iya + Plage + Mawj L'B7r M-t-7rrk
+    // 5. Arḍiya + Plage + Mawj L'B7r
     const sidewalkGround = new THREE.Mesh(
       new THREE.PlaneGeometry(420, 360),
       new THREE.MeshStandardMaterial({ map: createSidewalkTexture(), roughness: 0.88 })
@@ -699,7 +748,7 @@
       oceanGeo.computeVertexNormals();
     }
 
-    // 6. Réseau dyal T-Torqan + Rond-Point f Wssaṭ (0, 0)
+    // 6. Réseau dyal T-Torqan + Rond-Point
     const roadCoords = [-90, 0, 90];
     const roadTexNS = createAsphaltTexture();
     roadTexNS.repeat.set(1, 20);
@@ -1053,7 +1102,7 @@
       });
     });
 
-    // 8. Builder Waqi3i L'Chakhṣiya + Cap + Animations
+    // 8. Builder Chakhṣiya + Cap + Animations
     function createHumanRig({ shirtColor = 0x0284c7, pantsColor = 0x1e293b, skinColor = 0xf1c27d, hairColor = 0x1f1916, capColor = 0x000000, scale = 1 }) {
       const root = new THREE.Group();
       root.scale.setScalar(scale);
@@ -1173,7 +1222,7 @@
       return current + diff * factor;
     }
 
-    // 9. Modèle Tomobil Waqi3i + Sirène Police + Fumée / Drift Particles
+    // 9. Modèle Tomobil + Sirène + Smoke
     function createRealisticCar(colorHex, isPolice = false) {
       const group = new THREE.Group();
       const paintMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.62, roughness: 0.25 });
@@ -1313,6 +1362,7 @@
     player.position.set(12, 0, 16);
     scene.add(player);
 
+    let currentShirtHex = 0x16a34a;
     const outfitModal = document.getElementById('outfit-modal');
     function toggleOutfitModal() {
       outfitModal.style.display = outfitModal.style.display === 'block' ? 'none' : 'block';
@@ -1325,6 +1375,7 @@
         const sHex = Number(btn.dataset.shirt);
         const pHex = Number(btn.dataset.pants);
         const cHex = Number(btn.dataset.cap);
+        currentShirtHex = sHex;
         playerRig.shirtMat.color.setHex(sHex);
         playerRig.pantsMat.color.setHex(pHex);
         if (cHex && cHex !== 0x000000) {
@@ -1343,6 +1394,164 @@
     );
     guideArrow.rotation.x = Math.PI / 2;
     scene.add(guideArrow);
+
+    // 10b. Multiplayer PeerJS Layer (Joueurs En Ligne)
+    const remotePlayers = new Map(); // peerId -> { rig, targetPos, targetYaw, cycle, inCar }
+    const mpStatusEl = document.getElementById('mp-status');
+    const roomInputEl = document.getElementById('room-input');
+    let peer = null;
+    const connections = new Map();
+
+    function ensureRemotePlayer(id, shirtHex = 0xec4899) {
+      if (remotePlayers.has(id)) return remotePlayers.get(id);
+      const rig = createHumanRig({
+        shirtColor: shirtHex,
+        pantsColor: 0x1e293b,
+        skinColor: 0xf1c27d,
+        hairColor: 0x18181b,
+        scale: 1.02
+      });
+      rig.root.position.set(12, 0, 18);
+      scene.add(rig.root);
+      const entry = {
+        rig,
+        targetPos: new THREE.Vector3(12, 0, 18),
+        targetYaw: 0,
+        cycle: 0,
+        inCar: false
+      };
+      remotePlayers.set(id, entry);
+      return entry;
+    }
+
+    function removeRemotePlayer(id) {
+      const entry = remotePlayers.get(id);
+      if (entry) {
+        scene.remove(entry.rig.root);
+        remotePlayers.delete(id);
+      }
+      connections.delete(id);
+      updateMPStatus();
+    }
+
+    function updateMPStatus() {
+      const count = remotePlayers.size + (peer ? 1 : 0);
+      if (!peer) {
+        mpStatusEl.textContent = 'Offline — ktb smiyt room o wrek JOIN';
+      } else {
+        mpStatusEl.textContent = `Online (${count} joueur${count > 1 ? 's' : ''}) f room "${roomInputEl.value.trim()}"`;
+      }
+    }
+
+    function bindConnection(conn) {
+      conn.on('open', () => {
+        connections.set(conn.peer, conn);
+        ensureRemotePlayer(conn.peer);
+        updateMPStatus();
+      });
+      conn.on('data', data => {
+        if (!data || data.type !== 'state') return;
+        const rp = ensureRemotePlayer(conn.peer, data.shirt || 0xec4899);
+        rp.targetPos.set(data.x, data.y, data.z);
+        rp.targetYaw = data.yaw || 0;
+        rp.inCar = Boolean(data.inCar);
+        rp.rig.shirtMat.color.setHex(data.shirt || 0xec4899);
+      });
+      conn.on('close', () => removeRemotePlayer(conn.peer));
+      conn.on('error', () => removeRemotePlayer(conn.peer));
+    }
+
+    function connectMultiplayerRoom() {
+      if (typeof window.Peer === 'undefined') {
+        showToast('PeerJS ma t-ch-ar-ja-ch', true);
+        return;
+      }
+      const roomName = (roomInputEl.value || 'sa3d-room1').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!roomName) return;
+      roomInputEl.value = roomName;
+
+      if (peer) {
+        peer.destroy();
+        peer = null;
+      }
+      remotePlayers.forEach(rp => scene.remove(rp.rig.root));
+      remotePlayers.clear();
+      connections.clear();
+
+      const hostPeerId = `sa3d_host_${roomName}`;
+      const guestPeerId = `sa3d_g_${roomName}_${Math.random().toString(36).slice(2, 6)}`;
+
+      mpStatusEl.textContent = `Kay-t-connecta l-room "${roomName}"...`;
+      peer = new window.Peer(hostPeerId);
+
+      peer.on('open', () => {
+        mpStatusEl.textContent = `Host f room "${roomName}" — ts-nna s7abk`;
+        showToast(`Room "${roomName}" M-F-TO7A (HOST)`);
+      });
+
+      peer.on('connection', conn => {
+        bindConnection(conn);
+        showToast('Joueur jdïd dkhll l-room!');
+      });
+
+      peer.on('error', err => {
+        if (err && err.type === 'unavailable-id') {
+          if (peer) peer.destroy();
+          peer = new window.Peer(guestPeerId);
+          peer.on('open', () => {
+            const conn = peer.connect(hostPeerId, { reliable: true });
+            bindConnection(conn);
+            mpStatusEl.textContent = `M-connecti f room "${roomName}"`;
+            showToast(`Dkhlti l-room "${roomName}"!`);
+          });
+          peer.on('error', () => {
+            mpStatusEl.textContent = 'Erreur connexion — jrrb smiya okhra';
+          });
+        } else {
+          mpStatusEl.textContent = 'Connexion P2P m-t-wqqfa';
+        }
+      });
+    }
+    document.getElementById('btn-mp-connect').addEventListener('click', connectMultiplayerRoom);
+
+    let lastNetSend = 0;
+    function syncMultiplayer(nowMs, timeSec) {
+      if (peer && nowMs - lastNetSend > 60) {
+        lastNetSend = nowMs;
+        const payload = {
+          type: 'state',
+          x: player.position.x,
+          y: player.position.y,
+          z: player.position.z,
+          yaw: player.rotation.y,
+          shirt: currentShirtHex,
+          inCar: Boolean(activeVehicle)
+        };
+        connections.forEach(c => {
+          if (c.open) {
+            try { c.send(payload); } catch (_) {}
+          }
+        });
+      }
+
+      remotePlayers.forEach(rp => {
+        rp.rig.root.visible = !rp.inCar;
+        if (rp.inCar) return;
+        const dx = rp.targetPos.x - rp.rig.root.position.x;
+        const dz = rp.targetPos.z - rp.rig.root.position.z;
+        const dist = Math.hypot(dx, dz);
+        rp.rig.root.position.lerp(rp.targetPos, 0.28);
+        rp.rig.root.position.y = rp.targetPos.y;
+        rp.rig.root.rotation.y = lerpAngle(rp.rig.root.rotation.y, rp.targetYaw, 0.25);
+
+        if (dist > 0.03) {
+          rp.cycle += 0.22;
+          animateLimbs(rp.rig, rp.cycle, 0.55, false);
+        } else {
+          animateIdleOrJump(rp.rig, timeSec, false);
+        }
+      });
+    }
 
     // 11. Tomobilat + Police Cars + Wanted Pursuit & Arrest (BUSTED)
     const allVehicles = [];
@@ -1386,7 +1595,7 @@
     let activeVehicle = null;
     let nearestVehicle = null;
     let hoodCamMode = false;
-    let wantedLevel = 0; // 0 to 3 stars
+    let wantedLevel = 0;
     let isBusted = false;
     const wantedStarsEl = document.getElementById('wanted-stars');
     const bustedScreenEl = document.getElementById('busted-screen');
@@ -1438,7 +1647,6 @@
         allVehicles[0].health = 100;
       }
 
-      // Rj3 l-police l-blayahom
       const policeCars = allVehicles.filter(v => v.isPolice);
       if (policeCars[0]) policeCars[0].group.position.set(3.2, 0, -45);
       if (policeCars[1]) policeCars[1].group.position.set(93.2, 0, 65);
@@ -1541,12 +1749,10 @@
       allVehicles.forEach(v => {
         if (v === activeVehicle || !v.isAI) return;
 
-        // Police pursuit & arrest mlli wantedLevel > 0
         if (v.isPolice && wantedLevel > 0) {
           const toTarget = new THREE.Vector3().subVectors(targetPos, v.group.position);
           const dist = toTarget.length();
 
-          // Ila police car chddtk b-qrib (arrest range)
           const catchRadius = activeVehicle ? 5.2 : 4.2;
           if (dist < catchRadius) {
             triggerBusted('L-POLICE CHDDAK — BUSTED');
@@ -1595,7 +1801,7 @@
       });
     }
 
-    // 12. Pedestrians + 7iwar (NPC Interaction - Touche E)
+    // 12. Pedestrians + 7iwar
     const pedestrians = [];
     const npcQuotes = [
       'Salam! Rond-Point f (0,0) kay-rbt ga3 t-torqan.',
@@ -1734,7 +1940,7 @@
       showToast('BEEP BEEP !');
     }
 
-    // 12b. Collectibles (10 Cash Bags f l-map)
+    // 12b. Collectibles (10 Cash Bags)
     const bagCoords = [
       [0, 12], [45, -45], [104, -45], [33, 45], [135, 45],
       [-90, -45], [-90, 65], [90, 90], [0, 148], [-120, 165]
@@ -1782,7 +1988,7 @@
       bagsCounterEl.textContent = `CASH BAGS : ${collectedBagIndices.length} / ${cashBags.length}`;
     }
 
-    // 13. Missions (Delivery/Taxi + Standard) & Time Trial Race Checkpoints (R)
+    // 13. Missions & Time Trial Race Checkpoints (R)
     const missions = [
       { title: 'MISSION #1 : Grove Park', desc: 'T-wjjh l-Grove Park f ch-charq', x: 45, z: -45, reward: 500, time: 55 },
       { title: 'DELIVERY #2 : Colis Plage', desc: 'Wssl l-Colis l-Plage f l-janoub', x: 0, z: 148, reward: 800, time: 65 },
@@ -1806,7 +2012,6 @@
     let missionTimeLeft = missions[0].time;
     let lastSecondTick = performance.now();
 
-    // localStorage Save / Load
     const SAVE_KEY = 'san_andreas_3d_save_v1';
     function saveGameState() {
       try {
@@ -2006,6 +2211,7 @@
     document.getElementById('btn-stop-char').addEventListener('click', stopCharacterNow);
 
     window.addEventListener('keydown', e => {
+      if (document.activeElement === roomInputEl) return;
       if (isBusted) return;
       if (e.code === 'KeyX' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
         stopCharacterNow();
@@ -2305,6 +2511,14 @@
         mCtx.fill();
       });
 
+      remotePlayers.forEach(rp => {
+        if (rp.inCar) return;
+        mCtx.fillStyle = '#ec4899';
+        mCtx.beginPath();
+        mCtx.arc(half + (rp.rig.root.position.x - center.x) * scale, half + (rp.rig.root.position.z - center.z) * scale, 3.8, 0, Math.PI * 2);
+        mCtx.fill();
+      });
+
       allVehicles.forEach(v => {
         if (v === activeVehicle) return;
         mCtx.fillStyle = v.isPolice ? '#3b82f6' : '#f59e0b';
@@ -2369,6 +2583,7 @@
       } else {
         updatePlayer(timeSec);
       }
+      syncMultiplayer(nowMs, timeSec);
       updateSmoke();
       updateMission();
       updateCameraTarget();
